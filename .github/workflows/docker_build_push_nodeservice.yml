@@ -61,7 +61,6 @@ jobs:
 
       - name: Build and push with NPM token
         run: |
-          # echo  ${{ steps.meta.outputs.tags }}
           docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} . 
 
       # - name: Build and push with NPM token
