@@ -64,7 +64,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          platforms: ${{ inputs.DOCKER_TARGET_PLATFORM }}
+          # platforms: ${{ inputs.DOCKER_TARGET_PLATFORM }}
           push: true
           build-args: |
             NPM_TOKEN=${{ secrets.NPM_TOKEN }}
