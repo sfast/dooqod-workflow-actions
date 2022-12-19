@@ -60,16 +60,21 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push with NPM token
-        id: docker_build_with_npm_token
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          # platforms: ${{ inputs.DOCKER_TARGET_PLATFORM }}
-          push: true
-          build-args: |
-            NPM_TOKEN=${{ secrets.NPM_TOKEN }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+        run: |
+          echo  ${{ steps.meta.outputs.tags }}
+          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} . 
+
+      # - name: Build and push with NPM token
+      #   id: docker_build_with_npm_token
+      #   uses: docker/build-push-action@v3
+      #   with:
+      #     context: .
+      #     # platforms: ${{ inputs.DOCKER_TARGET_PLATFORM }}
+      #     push: true
+      #     build-args: |
+      #       NPM_TOKEN=${{ secrets.NPM_TOKEN }}
+      #     tags: ${{ steps.meta.outputs.tags }}
+      #     # labels: ${{ steps.meta.outputs.labels }}
           
       - name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}
