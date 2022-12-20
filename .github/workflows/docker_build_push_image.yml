@@ -23,28 +23,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          # list of Docker images to use as base name for tags
-          images: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}
-          # generate Docker tags based on the following events/attributes
-          tags: |
-            type=raw,value={{sha}}
+      - name: Extract branch short sha
+        id: git_extract_branch_sha
+        shell: bash
+        run: |
+          echo "REPO_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "Output for sha_short is: ${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}"
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       
-      - name: Build and push
+      - name: Build docker image with NPM token
         run: |
-          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  secrets.DOCKERHUB_REPO }}:${{ steps.meta.outputs.tags }} .
-          docker image push --all-tags
-          
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
+          docker build --tag ${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  secrets.DOCKERHUB_REPO }}:latest .
+          docker image push ${{  secrets.DOCKERHUB_REPO }} --all-tags
+      
+      - name: Push docker image
+        run: |
+          docker image push ${{  secrets.DOCKERHUB_REPO }} --all-tags
