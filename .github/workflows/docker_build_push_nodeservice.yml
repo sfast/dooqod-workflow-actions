@@ -44,7 +44,7 @@ jobs:
 
       - name: Build and push with NPM token
         run: |
-          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag  ${{ secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:${{ steps.meta.outputs.tags }} .
+          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  secrets.DOCKERHUB_REPO }}:${{ steps.meta.outputs.tags }} .
           docker image push --all-tags
           
       - name: Image digest
