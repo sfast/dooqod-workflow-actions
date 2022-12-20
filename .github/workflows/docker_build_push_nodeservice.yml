@@ -36,6 +36,10 @@ jobs:
           tags: |
             type=raw,value={{sha}}
 
+      - name: Print the Docker meta tags
+        run: |
+          echo ${{ steps.meta.outputs.tags }}
+
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -46,6 +50,3 @@ jobs:
         run: |
           docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  secrets.DOCKERHUB_REPO }}:${{ steps.meta.outputs.tags }} .
           docker image push --all-tags
-          
-      - name: Image digest
-        run: echo ${{ steps.docker_build.outputs.digest }}
