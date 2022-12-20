@@ -39,8 +39,7 @@ jobs:
       - name: Build docker image with NPM token
         run: |
           docker build --tag ${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  secrets.DOCKERHUB_REPO }}:latest .
-          docker image push ${{  secrets.DOCKERHUB_REPO }} --all-tags
-      
+
       - name: Push docker image
         run: |
-          docker image push ${{  secrets.DOCKERHUB_REPO }} --all-tags
+          docker image push ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }} --all-tags
