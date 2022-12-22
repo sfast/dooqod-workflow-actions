@@ -62,10 +62,10 @@ jobs:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
            command: |
-            helm repo add ${{ inputs.GITHUB_ORG }} \
+            helm repo add dooqod \
             --username ${{ secrets.HELM_REPO_GITHUB_TOKEN}} \
             --password ${{ secrets.HELM_REPO_GITHUB_TOKEN }} \
-            "https://raw.githubusercontent.com/${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_ROPO  }}/main/"
+            "https://raw.githubusercontent.com/dooqod/helm-repo/main/"
 
             helm upgrade ${{ secrets.SERVCE_NAME }} --install --wait --atomic  --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }},ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}" --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}"  dooqod/nodeservice -f ./helm/values.yaml
 
