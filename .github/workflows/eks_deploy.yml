@@ -61,4 +61,17 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
-           command: helm upgrade --install --wait --atomic --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} --create-namespace --set "autoscaling.maxReplicas=${{ env.HELM_CONFIG_SERVICE_MAX_REPLICA || 1 }},imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }},dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}" --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" ${{ secrets.SERVICE_NAME }} ./helm
+           #  
+           command: |
+
+            helm repo add ${{ inputs.GITHUB_ORG }} \
+            --username ${{ secrets.HELM_REPO_GITHUB_TOKEN}} \
+            --password ${{ secrets.HELM_REPO_GITHUB_TOKEN }} \
+            "https://raw.githubusercontent.com/${{ inputs.GITHUB_ORG }}/${{ inputs.HELM_ROPO  }}/main/"
+
+            helm upgrade --install --wait --atomic  --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }},dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}" --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}"  dooqod/${{ secrets.SERVICE_NAME }} -f ./helm/values.yaml
+           
+            # helm upgrade --install --wait --atomic --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} --create-namespace --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }},dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}" --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" ${{ secrets.SERVICE_NAME }} ./helm
+
+
+
