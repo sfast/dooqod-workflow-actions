@@ -11,6 +11,9 @@ on:
         required: false
         type: string
         default: ./helm/values.yaml
+      DOCKERHUB_REPO: 
+        required: false
+        type: string
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -84,7 +87,7 @@ jobs:
             helm upgrade ${{ secrets.SERVICE_NAME }} --install --wait --atomic  \
             --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} \
             --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
-            --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" \
+            --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.DOCKERHUB_REPO || secrets.SERVICE_NAME }}" \
             --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
             --set "ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}"  \
             ${{ inputs.HELM_REPO_NAME }} -f ${{ inputs.HELM_REPO_VALUES_PATH }}
