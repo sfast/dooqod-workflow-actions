@@ -2,6 +2,15 @@ name: eks_deploy
 
 on:
   workflow_call:
+    inputs:
+      HELM_REPO_NAME:
+        required: false
+        type: string
+        default: dooqod/nodeservice
+      HELM_REPO_VALUES_PATH:
+        required: false
+        type: string
+        default: ./helm/values.yaml
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -78,4 +87,4 @@ jobs:
             --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" \
             --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
             --set "ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}"  \
-            dooqod/nodeservice -f ./helm/values.yaml
+            ${{ inputs.HELM_REPO_NAME }} -f ${{ inputs.HELM_REPO_VALUES_PATH }}

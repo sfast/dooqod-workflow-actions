@@ -2,6 +2,15 @@ name: eks_deploy_with_subdomain
 
 on:
   workflow_call:
+    inputs:
+      HELM_REPO_NAME:
+        required: false
+        type: string
+        default: dooqod/nodeservice
+      HELM_REPO_VALUES_PATH:
+        required: false
+        type: string
+        default: ./helm/values.yaml
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -112,7 +121,6 @@ jobs:
           SUBDOMAIN: ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }}
           IP: ${{ steps.hostname.outputs.response }}
 
-
       # Deploying into k8s
 
       - name: Deploy ${{ secrets.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
@@ -122,4 +130,19 @@ jobs:
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
         with:
-          command: helm upgrade ${{ secrets.SERVICE_NAME }} ./helm --install --wait --atomic --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} --create-namespace --set "autoscaling.maxReplicas=${{ env.HELM_CONFIG_SERVICE_MAX_REPLICA || 1 }},imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }},dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}" --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}"  ${{steps.helmconfig.outputs.INGRESS_SET_ADDON}}
+           command: |
+            helm repo add dooqod \
+            --username ${{ secrets.HELM_REPO_GITHUB_TOKEN}} \
+            --password ${{ secrets.HELM_REPO_GITHUB_TOKEN }} \
+            "https://raw.githubusercontent.com/dooqod/helm-repo/main/"
+
+            helm repo update && helm search repo nodeservice
+
+            helm upgrade ${{ secrets.SERVICE_NAME }} --install --wait --atomic  \
+            --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} \
+            --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
+            --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.SERVICE_NAME }}" \
+            --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
+            --set "ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}"  \
+            ${{steps.helmconfig.outputs.INGRESS_SET_ADDON}} \
+            ${{ inputs.HELM_REPO_NAME }} -f ${{ inputs.HELM_REPO_VALUES_PATH }}
