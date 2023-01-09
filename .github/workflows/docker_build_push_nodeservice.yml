@@ -12,6 +12,14 @@ on:
       NPM_TOKEN:
         required: true
     inputs:
+      DOCKER_FILE_PATH:
+        type: string
+        required: false
+        default: "Dockerfile"
+      DOCKER_CONTEXT_PATH:
+        type: string
+        required: false
+        default: "."
       runs-on:
         type: string
         required: false
@@ -40,7 +48,7 @@ jobs:
 
       - name: Build docker image with NPM token
         run: |
-          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} .
+          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} -f ${{  inputs.DOCKER_FILE_PATH }}  ${{  inputs.DOCKER_CONTEXT_PATH }}
          
       - name: Push docker image
         run: |
