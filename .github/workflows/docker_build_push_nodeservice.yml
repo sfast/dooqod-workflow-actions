@@ -54,4 +54,4 @@ jobs:
          
       - name: Push docker image
         run: |
-          docker image push ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }} --all-tags
+          docker image push ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }} --all-tags
