@@ -3,13 +3,15 @@ name: docker_build_push_image
 on:
   workflow_call:
     secrets:
-      DOCKERHUB_USERNAME: 
-        required: true
       DOCKERHUB_TOKEN:
         required: true
-      DOCKERHUB_REPO:
-        required: true
     inputs:
+      DOCKERHUB_USERNAME: 
+        type: string
+        required: true
+      DOCKERHUB_REPO:
+        type: string
+        required: true
       DOCKER_FILE_PATH:
         type: string
         required: false
@@ -41,15 +43,13 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ inputs.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      - name: Build docker image with NPM token
+      - name: Build docker image
         run: |
-          echo "${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}"
-          echo "${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:latest , ${{  inputs.DOCKER_FILE_PATH }} ,  ${{  inputs.DOCKER_CONTEXT_PATH }}"
-          docker build --tag ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }}:latest -f ${{  inputs.DOCKER_FILE_PATH }}  ${{  inputs.DOCKER_CONTEXT_PATH }}
+          docker build --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:latest -f ${{  inputs.DOCKER_FILE_PATH }}  ${{  inputs.DOCKER_CONTEXT_PATH }}
 
       - name: Push docker image
         run: |
-          docker image push ${{  secrets.DOCKERHUB_USERNAME }}/${{  secrets.DOCKERHUB_REPO }} --all-tags
+          docker image push ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }} --all-tags

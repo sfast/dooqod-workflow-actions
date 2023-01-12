@@ -3,6 +3,15 @@ name: eks_deploy
 on:
   workflow_call:
     inputs:
+      SERVICE_NAME:
+        required: true
+        type: string
+      DOCKERHUB_USERNAME:
+        required: true
+        type: string
+      DOCKERHUB_REPO:
+        required: true
+        type: string
       HELM_REPO_NAME:
         required: false
         type: string
@@ -20,13 +29,7 @@ on:
         required: true
       DOCKERHUB_TOKEN:
         required: true
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_REPO:
-        required: true
       KUBE_CONFIG_DATA: 
-        required: true
-      SERVICE_NAME:
         required: true
       SERVICE_DOPPLER_TOKEN:
         required: true
@@ -68,7 +71,7 @@ jobs:
 
       # Deploying into k8s
 
-      - name: Deploy ${{ secrets.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
+      - name: Deploy ${{ inputs.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
         id: eksdeploy
         # if: secrets.AWS_EKS_NAMESPACE != '' &&  secrets.SERVICE_NAME != ''
         uses: koslib/helm-eks-action@v1.26.0
@@ -83,10 +86,10 @@ jobs:
 
             helm repo update && helm search repo nodeservice
 
-            helm upgrade ${{ secrets.SERVICE_NAME }} --install --wait --atomic  \
+            helm upgrade ${{ inputs.SERVICE_NAME }} --install --wait --atomic  \
             --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} \
-            --set "imageCredentials.username=${{ secrets.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
-            --set "image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO || secrets.SERVICE_NAME }}" \
+            --set "imageCredentials.username=${{ inputs.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
+            --set "image.repository=${{ inputs.DOCKERHUB_USERNAME }}/${{ inputs.DOCKERHUB_REPO || inputs.SERVICE_NAME }}" \
             --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
             --set "ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}"  \
             ${{ inputs.HELM_REPO_NAME }} -f ${{ inputs.HELM_REPO_VALUES_PATH }}
