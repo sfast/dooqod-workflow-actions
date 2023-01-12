@@ -127,7 +127,7 @@ jobs:
 
       # Deploying into k8s
 
-      - name: Deploy ${{ secrets.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
+      - name: Deploy ${{ inputs.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
         id: eksdeploy
         # if: secrets.AWS_EKS_NAMESPACE != '' &&  secrets.SERVICE_NAME != ''
         uses: koslib/helm-eks-action@v1.26.0
