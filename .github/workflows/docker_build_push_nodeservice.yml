@@ -7,6 +7,8 @@ on:
         required: true
       NPM_TOKEN:
         required: true
+      DOPPLER_TOKEN: 
+        required: false
     inputs:
       DOCKERHUB_USERNAME: 
         type: string
@@ -50,7 +52,7 @@ jobs:
 
       - name: Build docker image with NPM token
         run: |
-          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }}  --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:latest -f ${{  inputs.DOCKER_FILE_PATH }}  ${{  inputs.DOCKER_CONTEXT_PATH }}
+          docker build --build-arg NPM_TOKEN=${{ secrets.NPM_TOKEN }} DOPPLER_TOKEN=${{ secrets.DOPPLER_TOKEN }}  --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }} --tag ${{  inputs.DOCKERHUB_USERNAME }}/${{  inputs.DOCKERHUB_REPO }}:latest -f ${{  inputs.DOCKER_FILE_PATH }}  ${{  inputs.DOCKER_CONTEXT_PATH }}
          
       - name: Push docker image
         run: |
