@@ -106,7 +106,7 @@ jobs:
 
           echo "Dooqod: Check TLS config and enhance add-on if needed - ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}"
 
-          if [ "${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}" != "" ]; then
+          if [ -n "${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}" ]; then
             echo "AVAR AVAR AVAR AVAR"
             INGRESS_SET_STR+=" --set 'ingress.tls[0].hosts[0]=${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }}'"
           fi
