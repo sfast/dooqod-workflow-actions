@@ -104,6 +104,8 @@ jobs:
           echo "Creating subdomain ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }} for service ${{ inputs.SERVICE_NAME }} under Cloudflare "
           INGRESS_SET_STR+=" --set 'ingress.hosts[0].host=${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }},ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix'"
 
+          echo "Dooqod:: Check TLS config and enhance add-on if needed"
+          
           if [[ "${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}" != "" ]]; then
             INGRESS_SET_STR+=" --set 'ingress.tls[0].hosts[0]=${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }}'"
           fi
