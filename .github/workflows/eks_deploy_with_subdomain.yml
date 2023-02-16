@@ -6,7 +6,13 @@ on:
       SERVICE_NAME:
         required: true
         type: string
-      SERVICE_CONFIG_EKS_NAMESPACE: 
+      SERVICE_EKS_NAMESPACE: 
+        required: false
+        type: string
+      SERVICE_SUBDOMAIN: 
+        required: false
+        type: string
+      SERVICE_SUBDOMAIN_TLS_ENABLED: 
         required: false
         type: string
       DOCKERHUB_USERNAME:
@@ -80,7 +86,7 @@ jobs:
       # Get hostname  
       - name: Get hostname
         id: hostname
-        if: env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
         uses: koslib/helm-eks-action@v1.26.0
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
@@ -90,7 +96,7 @@ jobs:
 
       # Install python
       - name: Setup python
-        if: env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
         uses: actions/setup-python@v4
         with:
           python-version: 3.8
@@ -104,14 +110,14 @@ jobs:
           echo "1. Constructing Ingress --set addon based on HELM config"
           INGRESS_SET_STR=""
 
-          echo "Creating subdomain ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }} for service ${{ inputs.SERVICE_NAME }} under Cloudflare "
-          INGRESS_SET_STR+=" --set 'ingress.hosts[0].host=${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }},ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix'"
+          echo "Creating subdomain ${{ inputs.SERVICE_SUBDOMAIN || env.HELM_CONFIG_SERVICE_SUBDOMAIN }} for service ${{ inputs.SERVICE_NAME }} under Cloudflare "
+          INGRESS_SET_STR+=" --set 'ingress.hosts[0].host=${{ inputs.SERVICE_SUBDOMAIN || env.HELM_CONFIG_SERVICE_SUBDOMAIN }},ingress.hosts[0].paths[0].path=/,ingress.hosts[0].paths[0].pathType=Prefix'"
 
-          echo "Dooqod:: Check TLS config and enhance add-on if needed - ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}"
+          echo "Dooqod:: Check TLS config and enhance add-on if needed - ${{ inputs.SERVICE_SUBDOMAIN_TLS_ENABLED || env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}"
 
-          if [ -n "${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}" ]; then
+          if [ -n "${{ inputs.SERVICE_SUBDOMAIN_TLS_ENABLED || env.HELM_CONFIG_SERVICE_SUBDOMAIN_TLS_ENABLED }}" ]; then
             echo "Dooqod:: Check TLS evaluated to true, should extending with TLS value. "
-            INGRESS_SET_STR+=" --set 'ingress.tls[0].hosts[0]=${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }}'"
+            INGRESS_SET_STR+=" --set 'ingress.tls[0].hosts[0]=${{ inputs.SERVICE_SUBDOMAIN || env.HELM_CONFIG_SERVICE_SUBDOMAIN }}'"
           fi
 
           echo "INGRESS_SET_STR value is: ${INGRESS_SET_STR}"
@@ -137,7 +143,7 @@ jobs:
 
       # Deploying into k8s
 
-      - name: Deploy ${{ inputs.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
+      - name: Deploy ${{ inputs.SERVICE_NAME }} to kubernetes namespace ${{ inputs.SERVICE_EKS_NAMESPACE env.HELM_CONFIG_EKS_NAMESPACE }}
         id: eksdeploy
         # if: secrets.AWS_EKS_NAMESPACE != '' &&  secrets.SERVICE_NAME != ''
         uses: koslib/helm-eks-action@v1.26.0
@@ -153,7 +159,7 @@ jobs:
             helm repo update && helm search repo nodeservice
 
             helm upgrade ${{ inputs.SERVICE_NAME }} --install --wait --atomic  \
-            --create-namespace --namespace=${{ inputs.SERVICE_CONFIG_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }} \
+            --create-namespace --namespace=${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }} \
             --set "imageCredentials.username=${{ inputs.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
             --set "image.repository=${{ inputs.DOCKERHUB_USERNAME }}/${{ inputs.DOCKERHUB_REPO || inputs.SERVICE_NAME }}" \
             --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \

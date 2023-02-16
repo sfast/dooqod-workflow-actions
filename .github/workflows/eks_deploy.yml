@@ -6,6 +6,9 @@ on:
       SERVICE_NAME:
         required: true
         type: string
+      SERVICE_EKS_NAMESPACE: 
+        required: false
+        type: string
       DOCKERHUB_USERNAME:
         required: true
         type: string
@@ -87,7 +90,7 @@ jobs:
             helm repo update && helm search repo nodeservice
 
             helm upgrade ${{ inputs.SERVICE_NAME }} --install --wait --atomic  \
-            --create-namespace --namespace=${{ env.HELM_CONFIG_EKS_NAMESPACE }} \
+            --create-namespace --namespace=${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }} \
             --set "imageCredentials.username=${{ inputs.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
             --set "image.repository=${{ inputs.DOCKERHUB_USERNAME }}/${{ inputs.DOCKERHUB_REPO || inputs.SERVICE_NAME }}" \
             --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
