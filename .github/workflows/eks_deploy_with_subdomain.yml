@@ -126,7 +126,7 @@ jobs:
       # Create subdomain
       - name: Create subdomain if service has that settings under Doppler
         id: create_subdomain
-        if: env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
         run: |
           echo "Creating subdomain for service"
 
@@ -138,7 +138,7 @@ jobs:
           CF_TOKEN: ${{ secrets.CF_TOKEN }}
           CF_EMAIL: ${{ secrets.CF_EMAIL }}
           CF_DOMAIN: ${{ secrets.CF_DOMAIN }}
-          SUBDOMAIN: ${{ env.HELM_CONFIG_SERVICE_SUBDOMAIN }}
+          SUBDOMAIN: ${{ inputs.SERVICE_SUBDOMAIN || env.HELM_CONFIG_SERVICE_SUBDOMAIN }}
           IP: ${{ steps.hostname.outputs.response }}
 
       # Deploying into k8s
