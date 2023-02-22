@@ -1,0 +1,96 @@
+name: eks_remove_with_subdomain
+
+on:
+  workflow_call:
+    inputs:
+      SERVICE_EKS_NAMESPACE: 
+        required: false
+        type: string
+      SERVICE_SUBDOMAIN: 
+        required: false
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      KUBE_CONFIG_DATA: 
+        required: true
+      SERVICE_DOPPLER_TOKEN:
+        required: true
+      CF_DOMAIN:
+        required: true
+      CF_EMAIL:
+        required: true
+      CF_TOKEN: 
+        required: true
+
+jobs:
+  eks_remove_with_subdomain:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: dopplerhq/cli-action@v2
+
+      # Service doppler secrets set to env for main
+      - name: Login in Doppler, set Doppler env from github action project
+        run: |
+          doppler secrets download --no-file --format=docker --token="${{ secrets.SERVICE_DOPPLER_TOKEN  }}" | grep ^HELM_CONFIG_ >> $GITHUB_ENV;
+
+      # We have one AWS account for github ci
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+        
+      # Get hostname  
+      - name: Get hostname
+        id: hostname
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        uses: koslib/helm-eks-action@v1.26.0
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+          command: kubectl get svc ingress-nginx-controller -n ingress-nginx -o json | jq -r '.status.loadBalancer.ingress[0].hostname'
+
+      # Install python
+      - name: Setup python
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          pip install requests
+
+      # Remove Subdomain
+      - name: Remove subdomain
+        id: remove_subdomain
+        if: inputs.SERVICE_SUBDOMAIN != '' || env.HELM_CONFIG_SERVICE_SUBDOMAIN != ''
+        run: |
+          echo "Remove subdomain for service"
+          python cf-utils.py
+        env:
+          CF_TOKEN: ${{ secrets.CF_TOKEN }}
+          CF_EMAIL: ${{ secrets.CF_EMAIL }}
+          CF_DOMAIN: ${{ secrets.CF_DOMAIN }}
+          SUBDOMAIN: ${{ inputs.SERVICE_SUBDOMAIN || env.HELM_CONFIG_SERVICE_SUBDOMAIN }}
+          IP: ${{ steps.hostname.outputs.response }}
+          DELETE: 1
+
+      # Removing from k8s, make sure not to delete dq-prd or later check dq-dev, maybe for such things we should check above
+      - name: Removing kubernetes namespace ${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }}
+        id: eksdeploy
+        if: (inputs.SERVICE_EKS_NAMESPACE != '' && inputs.SERVICE_EKS_NAMESPACE != 'dq-prd')  ||  ( env.HELM_CONFIG_EKS_NAMESPACE != '' && env.HELM_CONFIG_EKS_NAMESPACE != 'dq-prd')
+        uses: koslib/helm-eks-action@v1.26.0
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+           command: kubectl delete ns ${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }} --dry-run
