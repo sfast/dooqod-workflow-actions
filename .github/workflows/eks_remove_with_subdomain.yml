@@ -85,10 +85,10 @@ jobs:
           IP: ${{ steps.hostname.outputs.response }}
           DELETE: 1
 
-      # Removing from k8s, make sure not to delete dq-prd or later check dq-dev, maybe for such things we should check above
+      # Removing from k8s
       - name: Removing kubernetes namespace ${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }}
         id: eksdeploy
-        if: (inputs.SERVICE_EKS_NAMESPACE != '' && inputs.SERVICE_EKS_NAMESPACE != 'dq-prd')  ||  ( env.HELM_CONFIG_EKS_NAMESPACE != '' && env.HELM_CONFIG_EKS_NAMESPACE != 'dq-prd')
+        if: inputs.SERVICE_EKS_NAMESPACE != '' || env.HELM_CONFIG_EKS_NAMESPACE != ''
         uses: koslib/helm-eks-action@v1.26.0
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
