@@ -23,6 +23,10 @@ on:
         required: false
         type: string
         default: ./helm/values.yaml
+      runs-on:
+        type: string
+        required: false
+        default: ubuntu-latest
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
@@ -38,10 +42,6 @@ on:
         required: true
       HELM_REPO_GITHUB_TOKEN:
         required: true
-      runs-on:
-        type: string
-        required: false
-        default: ubuntu-latest
 
 
 
