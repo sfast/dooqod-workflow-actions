@@ -1,0 +1,98 @@
+name: eks_setup_cron_jobs
+
+on:
+  workflow_call:
+    inputs:
+      SERVICE_NAME:
+        required: true
+        type: string
+      SERVICE_EKS_NAMESPACE: 
+        required: false
+        type: string
+      DOCKERHUB_USERNAME:
+        required: true
+        type: string
+      DOCKERHUB_REPO:
+        required: true
+        type: string
+      HELM_REPO_NAME:
+        required: false
+        type: string
+        default: dooqod/cron
+      HELM_REPO_VALUES_PATH:
+        required: false
+        type: string
+        default: ./helm/values.yaml
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_REGION:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+      KUBE_CONFIG_DATA: 
+        required: true
+      SERVICE_DOPPLER_TOKEN:
+        required: true
+      HELM_REPO_GITHUB_TOKEN:
+        required: true
+
+
+
+jobs:
+  eks_deploy:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: dopplerhq/cli-action@v2
+
+      # Service doppler secrets set to env for main
+      - name: Login in Doppler, set Doppler env from github action project
+        run: |
+          doppler secrets download --no-file --format=docker --token="${{ secrets.SERVICE_DOPPLER_TOKEN  }}" | grep ^HELM_CONFIG_ >> $GITHUB_ENV;
+      
+      # We have one AWS account for github ci
+      - name: AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Extract branch sha name
+      - name: Extract branch short sha
+        id: git_extract_branch_sha
+        shell: bash
+        run: |
+          echo "REPO_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "Output for sha_short is: $REPO_SHA_SHORT"
+
+      # Deploying into k8s
+
+      - name: Deploy ${{ inputs.SERVICE_NAME }} to kubernetes namespace ${{ env.HELM_CONFIG_EKS_NAMESPACE }}
+        id: eksdeploy
+        # if: secrets.AWS_EKS_NAMESPACE != '' &&  secrets.SERVICE_NAME != ''
+        uses: koslib/helm-eks-action@v1.26.0
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+        with:
+           command: |
+            helm repo add dooqod \
+            --username ${{ secrets.HELM_REPO_GITHUB_TOKEN}} \
+            --password ${{ secrets.HELM_REPO_GITHUB_TOKEN }} \
+            "https://raw.githubusercontent.com/dooqod/helm-repo/main/"
+
+            helm repo update && helm search repo cron
+
+            helm upgrade ${{ inputs.SERVICE_NAME }} --install --wait --atomic  \
+            --create-namespace --namespace=${{ inputs.SERVICE_EKS_NAMESPACE || env.HELM_CONFIG_EKS_NAMESPACE }} \
+            --set "imageCredentials.username=${{ inputs.DOCKERHUB_USERNAME }},imageCredentials.password=${{ secrets.DOCKERHUB_TOKEN }}" \
+            --set "image.repository=${{ inputs.DOCKERHUB_USERNAME }}/${{ inputs.DOCKERHUB_REPO || inputs.SERVICE_NAME }}" \
+            --set "image.tag=${{ steps.git_extract_branch_sha.outputs.REPO_SHA_SHORT }}" \
+            --set "ghargs.dopplerToken=${{ secrets.SERVICE_DOPPLER_TOKEN }}"  \
+            ${{ inputs.HELM_REPO_NAME }} -f ${{ inputs.HELM_REPO_VALUES_PATH }}
