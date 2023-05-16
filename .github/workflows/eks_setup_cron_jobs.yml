@@ -38,6 +38,10 @@ on:
         required: true
       HELM_REPO_GITHUB_TOKEN:
         required: true
+      runs-on:
+        type: string
+        required: false
+        default: ubuntu-latest
 
 
 
